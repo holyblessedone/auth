@@ -62,7 +62,7 @@ public class Auth {
         String ip = getPlayerIP(player);
 
         if (!authManager.isRegistered(playerName)) {
-            player.sendSystemMessage(Component.literal("Вы не зарегистрированы! Используйте /register <пароль>").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("You are not registered! Use /register <password>").withStyle(ChatFormatting.RED));
             setPlayerAuthState(player, true);
             return;
         }
@@ -70,16 +70,15 @@ public class Auth {
         String savedIp = authManager.getIP(playerName);
 
         if (savedIp != null && savedIp.equals(ip)) {
-            player.sendSystemMessage(Component.literal("Вы авторизованы автоматически."));
+            player.sendSystemMessage(Component.literal("You are automatically logged in."));
             setPlayerAuthState(player, false);
             authManager.logLogin(playerName, ip);
         } else {
-            player.sendSystemMessage(Component.literal("Введите /login <пароль> для авторизации"));
+            player.sendSystemMessage(Component.literal("Enter /login <password> to log in"));
             setPlayerAuthState(player, true);
         }
     }
 
-    // Запрет движения для неавторизованных
     private static final Set<UUID> notAuthenticated = new HashSet<>();
 
     @SubscribeEvent
@@ -92,13 +91,10 @@ public class Auth {
             double y = player.getY();
             double z = player.getZ();
 
-            float yaw = 0f;   // фиксируем, например, первоначальный поворот
+            float yaw = 0f;
             float pitch = 0f;
 
-            // Телепортируем игрока на то же место с фиксированным поворотом
             player.connection.teleport(x, y, z, yaw, pitch);
-
-            // Дополнительно сбрасываем скорость движения
             player.setDeltaMovement(0, 0, 0);
         }
     }
@@ -115,7 +111,6 @@ public class Auth {
 
     @SubscribeEvent
     public void registerCommands(RegisterCommandsEvent event) {
-        // /register <password>
         event.getDispatcher().register(literal("register")
                 .then(argument("password", StringArgumentType.word())
                         .executes(ctx -> {
@@ -125,18 +120,17 @@ public class Auth {
                             String ip = getPlayerIP(player);
 
                             if (authManager.isRegistered(playerName)) {
-                                ctx.getSource().sendFailure(Component.literal("Вы уже зарегистрированы!"));
+                                ctx.getSource().sendFailure(Component.literal("You are already registered!"));
                                 return 0;
                             }
 
                             authManager.register(playerName, password, ip);
-                            player.sendSystemMessage(Component.literal("Регистрация успешна! Вы авторизованы.\nНе забывайте ваш пароль!!"));
+                            player.sendSystemMessage(Component.literal("Registration successful! You are logged in.\nDon't forget your password!!"));
                             setPlayerAuthState(player, false);
                             authManager.logLogin(playerName, ip);
                             return 1;
                         })));
 
-        // /login <password>
         event.getDispatcher().register(literal("login")
                 .then(argument("password", StringArgumentType.word())
                         .executes(ctx -> {
@@ -146,23 +140,22 @@ public class Auth {
                             String ip = getPlayerIP(player);
 
                             if (!authManager.isRegistered(playerName)) {
-                                ctx.getSource().sendFailure(Component.literal("Вы не зарегистрированы. Используйте /register <пароль>").withStyle(ChatFormatting.RED));
+                                ctx.getSource().sendFailure(Component.literal("You are not registered. Use /register <password>").withStyle(ChatFormatting.RED));
                                 return 0;
                             }
 
                             if (authManager.checkPassword(playerName, password)) {
                                 authManager.updateIP(playerName, ip);
-                                player.sendSystemMessage(Component.literal("Вы успешно вошли!"));
+                                player.sendSystemMessage(Component.literal("You have logged in successfully!"));
                                 setPlayerAuthState(player, false);
                                 authManager.logLogin(playerName, ip);
                                 return 1;
                             } else {
-                                ctx.getSource().sendFailure(Component.literal("Неверный пароль!").withStyle(ChatFormatting.RED));
+                                ctx.getSource().sendFailure(Component.literal("Incorrect password!").withStyle(ChatFormatting.RED));
                                 return 0;
                             }
                         })));
 
-        // /auth remove <nickname>
         event.getDispatcher().register(literal("auth")
                 .then(literal("remove")
                         .then(argument("nickname", StringArgumentType.word())
@@ -170,17 +163,17 @@ public class Auth {
                                     CommandSourceStack source = ctx.getSource();
                                     String targetName = StringArgumentType.getString(ctx, "nickname");
                                     if (!source.hasPermission(3)) {
-                                        source.sendFailure(Component.literal("Недостаточно прав!").withStyle(ChatFormatting.RED));
+                                        source.sendFailure(Component.literal("Not enough rights!").withStyle(ChatFormatting.RED));
                                         return 0;
                                     }
 
                                     if (!authManager.isRegistered(targetName)) {
-                                        source.sendFailure(Component.literal("Игрок не найден или не зарегистрирован.").withStyle(ChatFormatting.RED));
+                                        source.sendFailure(Component.literal("Player not found or not registered.").withStyle(ChatFormatting.RED));
                                         return 0;
                                     }
 
                                     authManager.remove(targetName);
-                                    source.sendSuccess(() -> Component.literal("Данные игрока " + targetName + " удалены."), true);
+                                    source.sendSuccess(() -> Component.literal("Player data " + targetName + " has been deleted."), true);
                                     return 1;
                                 }))));
     }
@@ -226,7 +219,7 @@ class AuthManager {
             }
             if (!Files.exists(dataFile)) {
                 Files.createFile(dataFile);
-                saveData(); // пустой файл
+                saveData();
             } else {
                 Reader reader = Files.newBufferedReader(dataFile, StandardCharsets.UTF_8);
                 JsonElement jsonElement = JsonParser.parseReader(reader);
@@ -301,7 +294,7 @@ class AuthManager {
                 Files.createDirectories(authDir);
             }
             String datetime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-            String logLine = datetime + " - " + playerName + " вошёл с IP: " + ip + System.lineSeparator();
+            String logLine = datetime + " - " + playerName + " logged in with IP: " + ip + System.lineSeparator();
             Files.write(logFile, logLine.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             e.printStackTrace();
