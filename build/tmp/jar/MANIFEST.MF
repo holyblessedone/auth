@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: auth
-Specification-Vendor: holy
-Specification-Version: 1
-Implementation-Title: auth
-Implementation-Version: 1.0.0
-Implementation-Vendor: holy
-Implementation-Timestamp: 2025-11-30T16:09:53+0500
-
